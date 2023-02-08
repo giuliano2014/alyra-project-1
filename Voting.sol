@@ -5,8 +5,26 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
 
 contract Voting is Ownable {
 
-    function isContractAdmin() public view onlyOwner returns(bool) {
-        return msg.sender == owner();
+    // Mapping to store the state of the address in the whitelist
+    mapping (address => bool) whitelist;
+
+    /**
+     * Add an address to the whitelist
+     * @dev Only the owner can call this function
+     * @param _address the address to add to the whitelist
+     */
+    function setWhitelist(address _address) public onlyOwner {
+        whitelist[_address] = true;
+    }
+
+    /**
+     * Check if an address is in the whitelist
+     * @dev Only the owner can call this function
+     * @param _address the address to check
+     * @return bool indicating if the address is in the whitelist or not
+     */
+    function isWhitelisted(address _address) public view onlyOwner returns(bool) {
+        return whitelist[_address];
     }
 
 }
