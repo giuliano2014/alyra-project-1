@@ -43,4 +43,8 @@ contract Voting is Ownable {
         return votingStatus;
     }
 
+    function startProposalSession() public onlyOwner {
+        votingStatus = WorkflowStatus.ProposalsRegistrationStarted;
+    }
+
 }
