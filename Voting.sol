@@ -14,10 +14,21 @@ contract Voting is Ownable {
         VotesTallied
     }
 
+    struct Proposal {
+        string description;
+        uint voteCount;
+    }
+
     // Mapping to store the state of the address in the whitelist
     mapping (address => bool) whitelist;
 
     WorkflowStatus public votingStatus;
+    Proposal[] public proposals;
+
+    modifier onlyWhitelisted() {
+        require(whitelist[msg.sender], "You are not authorized");
+        _;
+    }
 
     /**
      * Add an address to the whitelist
@@ -45,6 +56,16 @@ contract Voting is Ownable {
 
     function startProposalSession() public onlyOwner {
         votingStatus = WorkflowStatus.ProposalsRegistrationStarted;
+    }
+
+    /**
+     * Add a proposal
+     * @dev Only the Whitelisted person can call this function
+     * @param _proposal the proposal description
+     */
+    function addProposal(string memory _proposal) public onlyWhitelisted {
+        require(votingStatus == WorkflowStatus.ProposalsRegistrationStarted, "Voting is not yet launched");
+        proposals.push(Proposal(_proposal, 0));
     }
 
 }
