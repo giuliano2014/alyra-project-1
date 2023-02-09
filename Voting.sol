@@ -115,5 +115,17 @@ contract Voting is Ownable {
         whitelist[msg.sender].votedProposalId = _proposalNumber;
         votingCount++;
     }
+    
+    function getWinner() public view returns(string memory) {
+        uint maxVoteCount = 0;
+        uint maxVoteCountIndex = 0;
+        for (uint i = 0; i < proposals.length; i++) {
+            if (proposals[i].voteCount > maxVoteCount) {
+                maxVoteCount = proposals[i].voteCount;
+                maxVoteCountIndex = i;
+            }
+        }
+        return proposals[maxVoteCountIndex].description;
+    }
 
 }
