@@ -19,8 +19,14 @@ contract Voting is Ownable {
         uint voteCount;
     }
 
-    // Mapping to store the state of the address in the whitelist
-    mapping (address => bool) whitelist;
+    struct Voter {
+        bool isRegistered;
+        bool hasVoted;
+        uint votedProposalId;
+    }
+
+    // Mapping that stores a voter's state relative to their address in the whitelist
+    mapping (address => Voter) whitelist;
 
     Proposal[] public proposals;
     WorkflowStatus public votingStatus;
@@ -37,7 +43,7 @@ contract Voting is Ownable {
     }
 
     modifier onlyWhitelisted() {
-        require(whitelist[msg.sender], "You are not authorized");
+        require(whitelist[msg.sender].isRegistered, "You are not authorized");
         _;
     }
 
@@ -51,13 +57,23 @@ contract Voting is Ownable {
     }
 
     /**
+     * Get the state of voter
+     * @dev Only the owner can call this function
+     * @param _address the address to check
+     * @return Voter
+     */
+    function getTheStateOfTheVoter(address _address) public view onlyOwner returns(Voter memory) {
+        return whitelist[_address];
+    }
+
+    /**
      * Check if an address is in the whitelist
      * @dev Only the owner can call this function
      * @param _address the address to check
      * @return bool indicating if the address is in the whitelist or not
      */
     function isWhitelisted(address _address) public view onlyOwner returns(bool) {
-        return whitelist[_address];
+        return whitelist[_address].isRegistered;
     }
 
     /**
@@ -66,7 +82,7 @@ contract Voting is Ownable {
      * @param _address the address to add to the whitelist
      */
     function setWhitelist(address _address) public onlyOwner isRegisteringVotersStatus("It's too late to register new voters") {
-        whitelist[_address] = true;
+        whitelist[_address].isRegistered = true;
         whitelistCount++;
     }
 
@@ -84,9 +100,12 @@ contract Voting is Ownable {
         votingStatus = WorkflowStatus.ProposalsRegistrationEnded;
     }
 
-    function voting() public view onlyWhitelisted returns(string memory) {
+    function voting(uint8 _proposalNumber) public onlyWhitelisted {
         require(votingStatus == WorkflowStatus.VotingSessionStarted, "The vote session has not yet started");
-        return "Vote session is starting";
+        require(!whitelist[msg.sender].hasVoted, "You have already voted");
+        proposals[_proposalNumber].voteCount++;
+        whitelist[msg.sender].hasVoted = true;
+        whitelist[msg.sender].votedProposalId = _proposalNumber;
     }
 
 }
