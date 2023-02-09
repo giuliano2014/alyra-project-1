@@ -30,7 +30,8 @@ contract Voting is Ownable {
 
     Proposal[] public proposals;
     WorkflowStatus public votingStatus;
-    uint256 public whitelistCount;
+    uint256 public whitelistedCount;
+    uint256 public votingCount;
 
     modifier isProposalsRegistrationStartedStatus(string memory _error) {
         require(votingStatus == WorkflowStatus.ProposalsRegistrationStarted, _error);
@@ -83,11 +84,11 @@ contract Voting is Ownable {
      */
     function setWhitelist(address _address) public onlyOwner isRegisteringVotersStatus("It's too late to register new voters") {
         whitelist[_address].isRegistered = true;
-        whitelistCount++;
+        whitelistedCount++;
     }
 
     function startProposalSession() public onlyOwner isRegisteringVotersStatus("There are not enough subscribers in the whitelist") {
-        require(whitelistCount >= 2, "There are not enough subscribers in the whitelist");
+        require(whitelistedCount >= 2, "There are not enough subscribers in the whitelist");
         votingStatus = WorkflowStatus.ProposalsRegistrationStarted;
     }
 
@@ -100,12 +101,19 @@ contract Voting is Ownable {
         votingStatus = WorkflowStatus.ProposalsRegistrationEnded;
     }
 
+    function stopVotingSession() public onlyOwner {
+        require(votingStatus == WorkflowStatus.VotingSessionStarted, "Right now, you can't stop voting session");
+        require(whitelistedCount == votingCount, "Not all voters have voted yet");
+        votingStatus = WorkflowStatus.VotingSessionEnded;
+    }
+
     function voting(uint8 _proposalNumber) public onlyWhitelisted {
         require(votingStatus == WorkflowStatus.VotingSessionStarted, "The vote session has not yet started");
         require(!whitelist[msg.sender].hasVoted, "You have already voted");
         proposals[_proposalNumber].voteCount++;
         whitelist[msg.sender].hasVoted = true;
         whitelist[msg.sender].votedProposalId = _proposalNumber;
+        votingCount++;
     }
 
 }
