@@ -25,6 +25,11 @@ contract Voting is Ownable {
         uint votedProposalId;
     }
 
+    event VoterRegistered(address voterAddress); 
+    event WorkflowStatusChange(WorkflowStatus previousStatus, WorkflowStatus newStatus);
+    event ProposalRegistered(uint proposalId);
+    event Voted (address voter, uint proposalId);
+
     // Mapping that stores a voter's state relative to their address in the whitelist
     mapping (address => Voter) whitelist;
 
@@ -32,6 +37,7 @@ contract Voting is Ownable {
     WorkflowStatus public votingStatus;
     uint256 public whitelistedCount;
     uint256 public votingCount;
+    uint256 private winningProposalId;
 
     modifier isProposalsRegistrationStartedStatus(string memory _error) {
         require(votingStatus == WorkflowStatus.ProposalsRegistrationStarted, _error);
@@ -55,6 +61,22 @@ contract Voting is Ownable {
      */
     function addProposal(string memory _proposal) public onlyWhitelisted isProposalsRegistrationStartedStatus("Right now, you can't add voting proposal") {
         proposals.push(Proposal(_proposal, 0));
+        emit ProposalRegistered(proposals.length);
+    }
+
+    function findTheWinningProposalId() public onlyOwner {
+        require(votingStatus == WorkflowStatus.VotingSessionEnded, "The voting session is not over yet");
+        uint256 maxVoteCount = 0;
+        uint256 maxVoteCountIndex = 0;
+        for (uint256 i = 0; i < proposals.length; i++) {
+            if (proposals[i].voteCount > maxVoteCount) {
+                maxVoteCount = proposals[i].voteCount;
+                maxVoteCountIndex = i;
+            }
+        }
+        winningProposalId = maxVoteCountIndex;
+        votingStatus = WorkflowStatus.VotesTallied;
+        emit WorkflowStatusChange(WorkflowStatus.VotingSessionEnded, votingStatus);
     }
 
     /**
@@ -65,6 +87,11 @@ contract Voting is Ownable {
      */
     function getTheStateOfTheVoter(address _address) public view onlyOwner returns(Voter memory) {
         return whitelist[_address];
+    }
+
+    function getWinner() public view returns(string memory) {
+        require(votingStatus == WorkflowStatus.VotesTallied, "The counting of the votes has not yet been done");
+        return proposals[winningProposalId].description;
     }
 
     /**
@@ -85,26 +112,31 @@ contract Voting is Ownable {
     function setWhitelist(address _address) public onlyOwner isRegisteringVotersStatus("It's too late to register new voters") {
         whitelist[_address].isRegistered = true;
         whitelistedCount++;
+        emit VoterRegistered(_address);
     }
 
     function startProposalSession() public onlyOwner isRegisteringVotersStatus("There are not enough subscribers in the whitelist") {
         require(whitelistedCount >= 2, "There are not enough subscribers in the whitelist");
         votingStatus = WorkflowStatus.ProposalsRegistrationStarted;
+        emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, votingStatus);
     }
 
     function startVotingSession() public onlyOwner {
         require(votingStatus == WorkflowStatus.ProposalsRegistrationEnded, "Right now, you can't start voting session");
         votingStatus = WorkflowStatus.VotingSessionStarted;
+        emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationEnded, votingStatus);
     }
 
     function stopProposalSession() public onlyOwner isProposalsRegistrationStartedStatus("Right now, you can't stop proposal session") {
         votingStatus = WorkflowStatus.ProposalsRegistrationEnded;
+        emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationStarted, votingStatus);
     }
 
     function stopVotingSession() public onlyOwner {
         require(votingStatus == WorkflowStatus.VotingSessionStarted, "Right now, you can't stop voting session");
         require(whitelistedCount == votingCount, "Not all voters have voted yet");
         votingStatus = WorkflowStatus.VotingSessionEnded;
+        emit WorkflowStatusChange(WorkflowStatus.VotingSessionStarted, votingStatus);
     }
 
     function voting(uint8 _proposalNumber) public onlyWhitelisted {
@@ -114,18 +146,7 @@ contract Voting is Ownable {
         whitelist[msg.sender].hasVoted = true;
         whitelist[msg.sender].votedProposalId = _proposalNumber;
         votingCount++;
-    }
-    
-    function getWinner() public view returns(string memory) {
-        uint maxVoteCount = 0;
-        uint maxVoteCountIndex = 0;
-        for (uint i = 0; i < proposals.length; i++) {
-            if (proposals[i].voteCount > maxVoteCount) {
-                maxVoteCount = proposals[i].voteCount;
-                maxVoteCountIndex = i;
-            }
-        }
-        return proposals[maxVoteCountIndex].description;
+        emit Voted(msg.sender, _proposalNumber);
     }
 
 }
