@@ -30,7 +30,6 @@ contract Voting is Ownable {
     event VoterRegistered(address voterAddress); 
     event WorkflowStatusChange(WorkflowStatus previousStatus, WorkflowStatus newStatus);
 
-    // Mapping that stores a voter's state relative to their address in the whitelist
     mapping (address => Voter) whitelist;
 
     uint private votingCount;
@@ -65,8 +64,8 @@ contract Voting is Ownable {
     }
 
     /**
-     * Add a proposal
-     * @dev Only the Whitelisted person can call this function
+     * Add a proposal for voting
+     * @dev Only whitelisted can call this function
      * @param _proposal the proposal description
      */
     function addProposal(string calldata _proposal) external onlyWhitelisted isProposalsRegistrationStarted("Right now, you can't add voting proposal") {
@@ -74,20 +73,36 @@ contract Voting is Ownable {
         emit ProposalRegistered(proposals.length);
     }
 
+    /**
+     * This function determines the winning proposal ID by finding the proposal with the most votes
+     * @dev Only the owner can call this function
+     */
     function findTheWinningProposalId() external onlyOwner {
+        // Check if the voting session has ended
         require(votingStatus == WorkflowStatus.VotingSessionEnded, "Right now, you can't find the winning proposal ID");
+
+        // Initialize variables to keep track of the proposal with the most votes
         uint maxVoteCount = 0;
         uint maxVoteCountIndex = 0;
+
+        // Loop through all proposals to find the one with the most votes
         for (uint i = 0; i < proposals.length; i++) {
             if (proposals[i].voteCount > maxVoteCount) {
                 maxVoteCount = proposals[i].voteCount;
                 maxVoteCountIndex = i;
             }
         }
+
+        // Set the winning proposal ID
         winningProposalId = maxVoteCountIndex;
+
+        // Update the voting status
         votingStatus = WorkflowStatus.VotesTallied;
+
+        // Emit an event indicating that the voting status has changed
         emit WorkflowStatusChange(WorkflowStatus.VotingSessionEnded, votingStatus);
     }
+
 
     /**
      * Get the state of voter
@@ -99,6 +114,12 @@ contract Voting is Ownable {
         return whitelist[_address];
     }*/
 
+    /**
+     * Retrieve the vote made by a voter with a specific address
+     * @dev Only whitelisted can call this function
+     * @param _address the address of the voter whose vote
+     * @return The description of the proposal that the voter voted for
+     */
     function getVoterVoteByAddress(address _address) external view onlyWhitelisted isVotesTallied returns(string memory) {
         uint proposalId = whitelist[_address].votedProposalId;
         return proposals[proposalId].description;
@@ -154,12 +175,26 @@ contract Voting is Ownable {
         emit WorkflowStatusChange(WorkflowStatus.VotingSessionStarted, votingStatus);
     }
 
+    /**
+     * This function allows a user to vote on a proposal
+     * @dev Only whitelisted can call this function
+     * @param _proposalNumber the proposal id
+     */
     function voting(uint _proposalNumber) external onlyWhitelisted isVotingSessionStarted("Right now, you can't vote") {
+        // Check if the sender has already voted
         require(!whitelist[msg.sender].hasVoted, "You have already voted");
+
+        // Increase the vote count for the specified proposal
         proposals[_proposalNumber].voteCount++;
+
+        // Mark the sender as having voted
         whitelist[msg.sender].hasVoted = true;
         whitelist[msg.sender].votedProposalId = _proposalNumber;
+
+        // Increase the overall voting count
         votingCount++;
+
+        // Emit an event indicating that the user has voted
         emit Voted(msg.sender, _proposalNumber);
     }
 
