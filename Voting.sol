@@ -49,6 +49,11 @@ contract Voting is Ownable {
         _;
     }
 
+    modifier isVotesTalliedStatus() {
+        require(votingStatus == WorkflowStatus.VotesTallied, "The counting of the votes has not yet been done");
+        _;
+    }
+
     modifier onlyWhitelisted() {
         require(whitelist[msg.sender].isRegistered, "You are not authorized");
         _;
@@ -65,7 +70,7 @@ contract Voting is Ownable {
     }
 
     function findTheWinningProposalId() public onlyOwner {
-        require(votingStatus == WorkflowStatus.VotingSessionEnded, "The voting session is not over yet");
+        require(votingStatus == WorkflowStatus.VotingSessionEnded, "Right now, you can't find the winning proposal ID");
         uint256 maxVoteCount = 0;
         uint256 maxVoteCountIndex = 0;
         for (uint256 i = 0; i < proposals.length; i++) {
@@ -89,8 +94,12 @@ contract Voting is Ownable {
         return whitelist[_address];
     }
 
-    function getWinner() public view returns(string memory) {
-        require(votingStatus == WorkflowStatus.VotesTallied, "The counting of the votes has not yet been done");
+    function getVoterVoteByAddress(address _address) public view onlyWhitelisted isVotesTalliedStatus returns(string memory) {
+        uint256 proposalId = whitelist[_address].votedProposalId;
+        return proposals[proposalId].description;
+    } 
+
+    function getWinner() public view isVotesTalliedStatus returns(string memory) {
         return proposals[winningProposalId].description;
     }
 
@@ -115,7 +124,7 @@ contract Voting is Ownable {
         emit VoterRegistered(_address);
     }
 
-    function startProposalSession() public onlyOwner isRegisteringVotersStatus("There are not enough subscribers in the whitelist") {
+    function startProposalSession() public onlyOwner isRegisteringVotersStatus("Right now, you can't start proposal session") {
         require(whitelistedCount >= 2, "There are not enough subscribers in the whitelist");
         votingStatus = WorkflowStatus.ProposalsRegistrationStarted;
         emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, votingStatus);
