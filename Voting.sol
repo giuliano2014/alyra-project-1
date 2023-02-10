@@ -33,9 +33,9 @@ contract Voting is Ownable {
     // Mapping that stores a voter's state relative to their address in the whitelist
     mapping (address => Voter) whitelist;
 
-    uint256 private votingCount;
-    uint256 private whitelistedCount;
-    uint256 private winningProposalId;
+    uint private votingCount;
+    uint private whitelistedCount;
+    uint private winningProposalId;
     Proposal[] public proposals;
     WorkflowStatus private votingStatus;
 
@@ -76,9 +76,9 @@ contract Voting is Ownable {
 
     function findTheWinningProposalId() external onlyOwner {
         require(votingStatus == WorkflowStatus.VotingSessionEnded, "Right now, you can't find the winning proposal ID");
-        uint256 maxVoteCount = 0;
-        uint256 maxVoteCountIndex = 0;
-        for (uint256 i = 0; i < proposals.length; i++) {
+        uint maxVoteCount = 0;
+        uint maxVoteCountIndex = 0;
+        for (uint i = 0; i < proposals.length; i++) {
             if (proposals[i].voteCount > maxVoteCount) {
                 maxVoteCount = proposals[i].voteCount;
                 maxVoteCountIndex = i;
@@ -100,7 +100,7 @@ contract Voting is Ownable {
     }*/
 
     function getVoterVoteByAddress(address _address) external view onlyWhitelisted isVotesTallied returns(string memory) {
-        uint256 proposalId = whitelist[_address].votedProposalId;
+        uint proposalId = whitelist[_address].votedProposalId;
         return proposals[proposalId].description;
     } 
 
@@ -154,7 +154,7 @@ contract Voting is Ownable {
         emit WorkflowStatusChange(WorkflowStatus.VotingSessionStarted, votingStatus);
     }
 
-    function voting(uint8 _proposalNumber) external onlyWhitelisted isVotingSessionStarted("Right now, you can't vote") {
+    function voting(uint _proposalNumber) external onlyWhitelisted isVotingSessionStarted("Right now, you can't vote") {
         require(!whitelist[msg.sender].hasVoted, "You have already voted");
         proposals[_proposalNumber].voteCount++;
         whitelist[msg.sender].hasVoted = true;
