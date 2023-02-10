@@ -69,7 +69,7 @@ contract Voting is Ownable {
      * @dev Only the Whitelisted person can call this function
      * @param _proposal the proposal description
      */
-    function addProposal(string memory _proposal) external onlyWhitelisted isProposalsRegistrationStarted("Right now, you can't add voting proposal") {
+    function addProposal(string calldata _proposal) external onlyWhitelisted isProposalsRegistrationStarted("Right now, you can't add voting proposal") {
         proposals.push(Proposal(_proposal, 0));
         emit ProposalRegistered(proposals.length);
     }
