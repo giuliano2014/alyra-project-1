@@ -103,17 +103,6 @@ contract Voting is Ownable {
         emit WorkflowStatusChange(WorkflowStatus.VotingSessionEnded, votingStatus);
     }
 
-
-    /**
-     * Get the state of voter
-     * @dev Only the owner can call this function
-     * @param _address the address to check
-     * @return Voter
-     */
-    /*function getTheStateOfTheVoter(address _address) external view onlyOwner returns(Voter memory) {
-        return whitelist[_address];
-    }*/
-
     /**
      * Retrieve the vote made by a voter with a specific address
      * @dev Only whitelisted can call this function
@@ -128,16 +117,6 @@ contract Voting is Ownable {
     function getWinner() external view isVotesTallied returns(string memory) {
         return proposals[winningProposalId].description;
     }
-
-    /**
-     * Check if an address is in the whitelist
-     * @dev Only the owner can call this function
-     * @param _address the address to check
-     * @return bool indicating if the address is in the whitelist or not
-     */
-    /*function isWhitelisted(address _address) external view onlyOwner returns(bool) {
-        return whitelist[_address].isRegistered;
-    }*/
 
     /**
      * Add an address to the whitelist
