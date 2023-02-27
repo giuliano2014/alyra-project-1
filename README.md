@@ -1,2 +1,2 @@
-# Alyra - project #1
+# Alyra - Project #1
 Solidity voting system
