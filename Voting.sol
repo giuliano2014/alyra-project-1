@@ -70,7 +70,7 @@ contract Voting is Ownable {
      */
     function addProposal(string calldata _proposal) external onlyWhitelisted isProposalsRegistrationStarted("Right now, you can't add voting proposal") {
         proposals.push(Proposal(_proposal, 0));
-        emit ProposalRegistered(proposals.length);
+        emit ProposalRegistered(proposals.length - 1);
     }
 
     /**
@@ -82,8 +82,8 @@ contract Voting is Ownable {
         require(votingStatus == WorkflowStatus.VotingSessionEnded, "Right now, you can't find the winning proposal ID");
 
         // Initialize variables to keep track of the proposal with the most votes
-        uint maxVoteCount = 0;
-        uint maxVoteCountIndex = 0;
+        uint maxVoteCount;
+        uint maxVoteCountIndex;
 
         // Loop through all proposals to find the one with the most votes
         for (uint i = 0; i < proposals.length; i++) {
